@@ -1,0 +1,60 @@
+plugins {
+    id 'org.springframework.boot' version '2.2.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
+}
+
+group = 'landsky.library'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+//指定编译的编码
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+//    mavenCentral()
+    // 以下四行代码为阿里gradle 源
+    maven{ url 'https://maven.aliyun.com/repository/google'}
+    maven{ url 'https://maven.aliyun.com/repository/gradle-plugin'}
+    maven{ url 'https://maven.aliyun.com/repository/public'}
+    maven{ url 'https://maven.aliyun.com/repository/jcenter'}
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter
+    compile group: 'com.baomidou', name: 'mybatis-plus-boot-starter', version: '3.3.1'
+// https://mvnrepository.com/artifact/mysql/mysql-connector-java
+    compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
+    // https://mvnrepository.com/artifact/com.alibaba/druid
+    compile group: 'com.alibaba', name: 'druid', version: '1.1.21'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: '2.2.5.RELEASE'
+// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-thymeleaf
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version: '2.2.5.RELEASE'
+// https://mvnrepository.com/artifact/com.alibaba/fastjson
+    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.66'
+
+    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: '7.6.0'
+
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '7.6.0'
+
+    compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: '7.6.0'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
