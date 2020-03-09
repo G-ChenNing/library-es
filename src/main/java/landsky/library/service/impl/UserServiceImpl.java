@@ -379,8 +379,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 //                "    }\n" +
 //                "  ]\n" +
 //                "}";
-        JSONObject jsonObject1 = JSONObject.parseObject(reqJson);
-        log.info(jsonObject1.toJSONString());
+//        JSONObject jsonObject1 = JSONObject.parseObject(reqJson);
+//        log.info(jsonObject1.toJSONString());
 
         request.setJsonEntity(reqJson);
         Response response = highLevelClient.getLowLevelClient().performRequest(request);
