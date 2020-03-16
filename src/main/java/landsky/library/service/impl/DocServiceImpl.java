@@ -1,13 +1,12 @@
 package landsky.library.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import landsky.library.entity.Category;
 import landsky.library.entity.Doc;
-import landsky.library.entity.Shop;
 import landsky.library.mapper.DocMapper;
 import landsky.library.service.ICategoryService;
 import landsky.library.service.IDocService;
@@ -19,23 +18,16 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author wcn
@@ -53,7 +45,7 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
     public void insertEs() {
         List<Doc> list = list();
 
-        list.forEach(li->{
+        list.forEach(li -> {
             System.out.println(JSONObject.toJSON(li));
 
 //                XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject();
@@ -65,14 +57,14 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
 //                xContentBuilder.field("category_name",ca.get(li.getCategoryId()));
 //                xContentBuilder.endObject();
             Map<String, Object> map = new HashMap<>();
-            map.put("document", li.getName()+"。"+li.getDocument());
+            map.put("document", li.getName() + "。" + li.getDocument());
 //            map.put("name", li.getName());
             map.put("id", li.getId());
             map.put("tags", li.getTags());
             map.put("category_id", li.getCategoryId());
             map.put("category_name", ca.get(li.getCategoryId()));
             IndexRequest indexRequest = new IndexRequest("doc").id(li.getId().toString()).source(map);
-            IndexResponse index ;
+            IndexResponse index;
             try {
                 index = highLevelClient.index(indexRequest, RequestOptions.DEFAULT);
             } catch (IOException e) {
@@ -83,8 +75,23 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
     }
 
     @Override
-    public Map<String, Object> searchES(String keyword, String tags, Integer categoryId,Integer from,Integer size) throws IOException {
+    public Map<String, Object> searchES(String keyword, String tags, Integer categoryId, Integer from, Integer size, Integer orderBy) throws IOException {
         Map<String, Object> result = new HashMap<>();
+
+        if (keyword == null || keyword.isEmpty()) {
+            Page<Doc> page = new Page<>();
+            Page<Doc> page1 = page(page);
+            List<Doc> records = page1.getRecords();
+            if (orderBy != null && orderBy == 1) {
+                Collections.sort(records);
+            }
+            result.put("pageIndex", from / size + 1);
+            result.put("pageSize", size);
+            result.put("pageTotal",page1.getTotal());
+            result.put("success", true);
+            result.put("object", records);
+            return result;
+        }
 
         JSONObject jsonRequestObj = new JSONObject();
         //source
@@ -144,8 +151,8 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
 //        jsonRequestObj.getJSONObject("aggs").getJSONObject("group_by_tags").put("terms", new JSONObject());
 //        jsonRequestObj.getJSONObject("aggs").getJSONObject("group_by_tags").getJSONObject("terms").put("field", "tags");
 
-        jsonRequestObj.put("from",from);
-        jsonRequestObj.put("size",size);
+        jsonRequestObj.put("from", from);
+        jsonRequestObj.put("size", size);
 
         String reqJson = jsonRequestObj.toJSONString();
         System.out.println(reqJson);
@@ -156,7 +163,9 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
         String s = EntityUtils.toString(response.getEntity());
         log.info(s);
         JSONObject jsonObject = JSONObject.parseObject(s);
-        JSONArray jsonArray = jsonObject.getJSONObject("hits").getJSONArray("hits");
+        JSONObject hits = jsonObject.getJSONObject("hits");
+        int pageTotal = hits.getJSONObject("total").getInteger("value");
+        JSONArray jsonArray = hits.getJSONArray("hits");
         List<Doc> docs = new ArrayList<>();
         for (int i = 0; i < jsonArray.size(); i++) {
             JSONObject json = jsonArray.getJSONObject(i);
@@ -167,18 +176,25 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
 
             docs.add(doc);
         }
-
-        result.put("value", docs);
+        if (orderBy != null && orderBy == 1) {
+            Collections.sort(docs);
+        }
+        result.put("pageIndex", from / size + 1);
+        result.put("pageSize", size);
+        result.put("pageTotal",pageTotal);
+        result.put("success", true);
+        result.put("object", docs);
         return result;
     }
 
     private static Map<Integer, String> ca = new HashMap<>();
+
     @PostConstruct
     public void init() {
         QueryWrapper<Category> queryWrapper = new QueryWrapper<Category>();
         queryWrapper.ge("id", 20);
         List<Category> list = categoryService.list(queryWrapper);
-        list.forEach(li->{
+        list.forEach(li -> {
             ca.put(li.getId(), li.getName());
         });
 //        insertEs();

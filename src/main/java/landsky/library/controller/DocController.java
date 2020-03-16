@@ -1,6 +1,7 @@
 package landsky.library.controller;
 
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import landsky.library.entity.Doc;
 import landsky.library.service.IDocService;
 import landsky.library.service.impl.DocServiceImpl;
@@ -11,8 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <p>
@@ -31,11 +31,12 @@ public class DocController extends BaseController {
 
     @RequestMapping("/query")
     @ResponseBody
-    public Map<String, Object> searchES(String keyword, String tags, Integer categoryId, Integer pageIndex, Integer pageSize) throws IOException {
+    public Map<String, Object> searchES(String keyword, String tags, Integer categoryId, Integer pageIndex, Integer pageSize,Integer orderBy) throws IOException {
         Map<String, Object> result = new HashMap<>();
-        Map<String, Object> stringObjectMap = docService.searchES(keyword, tags, categoryId, pageIndex == null ? 0 : (pageIndex - 1) * pageSize, pageSize == null ? 10 : pageSize);
+
+        Map<String, Object> docs= docService.searchES(keyword, tags, categoryId, pageIndex == null ? 0 : (pageIndex - 1) * pageSize, pageSize == null ? 10 : pageSize, orderBy);
         result.put("success", true);
-        result.put("object", stringObjectMap);
+        result.put("object", docs);
         return result;
     }
 
@@ -48,22 +49,56 @@ public class DocController extends BaseController {
         return result;
     }
 
-    String folder = "D:\\workspace\\library\\src\\main\\java\\landsky\\library\\controller\\file\\";
+    static String folder;
+    static {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("windows")) {
+            folder = "D:\\";
+        } else {
+            folder = "/home/";
+        }
+    }
+
     @GetMapping("/{id}")
-    public void download(HttpServletResponse response, @PathVariable("id") String id) {
-        Doc doc = docService.getById(id);
-        String path = folder + doc.getName() + ".txt";
+    public  Map<String, Object> queryOne(@PathVariable("id") String id) {
+        Map<String, Object> result = new HashMap<>();
+        if (id == null || id.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "blank");
+            return result;
+        }
+        result.put("success", true);
+        result.put("object", docService.getById(id));
+        return result;
+    }
+
+    @RequestMapping("/multi_downliad")
+    public void download(HttpServletResponse response, @RequestParam("ids[]") String[] ids) {
+        if (ids == null) {
+            return;
+        }
+        String path = folder + rotatingHash(Arrays.toString(ids),64) + ".txt";
         File file = new File(path);
-        FileOutputStream outputStream;
-        try {
-            outputStream = new FileOutputStream(file);
-            outputStream.write(doc.getDocument().getBytes(Charset.defaultCharset()));
-            outputStream.close();
+
+
+        try (FileOutputStream outputStream= new FileOutputStream(file);){
+            for (String id : ids) {
+                Doc doc = docService.getById(id);
+                outputStream.write(doc.getName().getBytes());
+                outputStream.write("\n".getBytes());
+                outputStream.write(doc.getDocument().getBytes(Charset.defaultCharset()));
+                outputStream.write("\n".getBytes());
+                outputStream.write("__________________________________________________________".getBytes());
+                outputStream.write("\n".getBytes());
+                doc.setDownload(doc.getDownload() + 1);
+                docService.updateById(doc);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        try (InputStream is = new FileInputStream(new File(folder, doc.getName() + ".txt"))
+        try (InputStream is = new FileInputStream(new File(path))
              ; OutputStream os = response.getOutputStream();) {
             response.setContentType("application/x-download");
             response.addHeader("Content-Disposition", "attachment;filename=test.txt");
@@ -73,5 +108,12 @@ public class DocController extends BaseController {
             e.printStackTrace();
         }
 
+    }
+    static int rotatingHash(String key, int prime)
+    {
+        int hash, i;
+        for (hash=key.length(), i=0; i<key.length(); ++i)
+            hash = (hash<<4)^(hash>>28)^key.charAt(i);
+        return (hash % prime);
     }
 }

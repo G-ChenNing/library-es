@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import landsky.library.entity.Doc;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,6 +17,6 @@ import java.util.Map;
  */
 public interface IDocService extends IService<Doc> {
     public void insertEs();
-    Map<String, Object> searchES(String keyword,String tags,Integer categoryId,Integer from,Integer size)throws IOException;
+    Map<String, Object> searchES(String keyword, String tags, Integer categoryId, Integer from, Integer size, Integer orderBy)throws IOException;
 
 }

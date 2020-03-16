@@ -18,7 +18,7 @@ import lombok.experimental.Accessors;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
-public class Doc extends BaseEntity {
+public class Doc extends BaseEntity implements Comparable<Doc>{
 
     private static final long serialVersionUID = 1L;
 
@@ -33,8 +33,14 @@ public class Doc extends BaseEntity {
 
     private Integer categoryId;
 
+    private Integer download;
+
     @TableField(exist = false)
     private String categoryName;
 
 
+    @Override
+    public int compareTo(Doc doc) {
+        return -Integer.compare(this.download, doc.getDownload());
+    }
 }

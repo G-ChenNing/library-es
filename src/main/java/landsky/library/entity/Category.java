@@ -17,9 +17,9 @@ import java.time.LocalDateTime;
  * @since 2020-03-08
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+//@EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
-public class Category extends BaseEntity {
+public class Category {
 
     private static final long serialVersionUID = 1L;
 
