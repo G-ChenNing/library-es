@@ -90,6 +90,7 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
             result.put("pageTotal",page1.getTotal());
             result.put("success", true);
             result.put("object", records);
+            result.put("token", new ArrayList<>());
             return result;
         }
 
@@ -184,7 +185,32 @@ public class DocServiceImpl extends ServiceImpl<DocMapper, Doc> implements IDocS
         result.put("pageTotal",pageTotal);
         result.put("success", true);
         result.put("object", docs);
+        result.put("token", getToken(keyword));
         return result;
+    }
+
+    private List<String> getToken(String keyword) throws IOException {
+        JSONObject jsonRequestObj = new JSONObject();
+        Request request = new Request("GET", "_analyze?pretty");
+        //source
+        jsonRequestObj.put("analyzer", "ik_smart");
+        //query
+        jsonRequestObj.put("text", keyword);
+        String reqJson = jsonRequestObj.toJSONString();
+        request.setJsonEntity(reqJson);
+        Response response = highLevelClient.getLowLevelClient().performRequest(request);
+        String s = EntityUtils.toString(response.getEntity());
+//        List<String> strings = JSONObject.parseArray(s, String.class);
+        JSONObject jsonObject = JSONObject.parseObject(s);
+        JSONArray tokens = jsonObject.getJSONArray("tokens");
+        List<String> strings = tokens.toJavaList(String.class);
+        List<String> result = new ArrayList<>();
+        strings.forEach(li->{
+            JSONObject jsonObject1 = JSONObject.parseObject(li);
+            result.add(jsonObject1.getString("token"));
+        });
+        return result;
+
     }
 
     private static Map<Integer, String> ca = new HashMap<>();
