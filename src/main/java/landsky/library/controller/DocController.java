@@ -6,6 +6,7 @@ import landsky.library.entity.Doc;
 import landsky.library.service.IDocService;
 import landsky.library.service.impl.DocServiceImpl;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.pegdown.PegDownProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -115,5 +116,24 @@ public class DocController extends BaseController {
         for (hash=key.length(), i=0; i<key.length(); ++i)
             hash = (hash<<4)^(hash>>28)^key.charAt(i);
         return (hash % prime);
+    }
+
+
+
+    public void generateHtml(File mdFile) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(mdFile), "UTF-8"));
+        String line = null;
+        String mdContent = "";
+        while ((line = br.readLine()) != null) {
+            mdContent += line + "\r\n";
+        }
+        PegDownProcessor pdp = new PegDownProcessor(Integer.MAX_VALUE);
+        String htmlContent = pdp.markdownToHtml(mdContent);
+
+        System.out.println(htmlContent);
+    }
+    public static void main(String[] args) throws IOException {
+        DocController pageGenerator = new DocController();
+        pageGenerator.generateHtml(new File("D:\\README.md"));
     }
 }
