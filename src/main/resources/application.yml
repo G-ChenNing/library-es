@@ -5,7 +5,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 123456
-    url:  jdbc:mysql://119.3.88.94:3307/library?useUnicode=true&characterEncoding=utf8&allowMultiQueries=true
+    url:  jdbc:mysql://119.3.49.76:3307/library?useUnicode=true&characterEncoding=utf8&allowMultiQueries=true
     type: com.alibaba.druid.pool.DruidDataSource
   resources:
     #true表示所有的controller都没有命中，则使用默认静态资源
